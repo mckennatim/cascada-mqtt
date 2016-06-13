@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, minimum-scale=1, maximum-scale=1">	
+	<title>webmqtt</title>
+	<script src="./browserMqtt.js"></script>
+	<style type="text/css" media="screen">
+		#temp1 {
+			font-size: 2em;
+		}	
+		span {
+			font-size: 1.4em;
+		}	
+	</style>	
+</head>
+<body>
+	<h1>read and change device</h1>
+	<span  id="temp1"></span><br>
+	roof heater on  ? <span id='lue'></span><br>
+	<button id="button" onclick="uclicked()">toggle device</button>
+	<button id="button2" onclick="empty()">empty eeprom</button><br><br>
+	<button id="button3" onclick="devtime()">devtime</button>
+	<button id="button3" onclick="sendSchedule()">send schedule</button><br>
+	with timer2 starting in 
+	<input type="text" id="mbox" value=1 size="3" onchange="mchanged()">
+
+	min <br> and going for 
+	<input type="text" id="tbox" value=15 size="3" onchange="vchanged()">minutes<br>
+	<div>
+		Timer display updates every 
+		<input type="text" id="crement" value=5 size="3" onchange="newCrement()">
+		seconds <br>
+		<span>Timer 1: </span><span id="timr1"></span><br>
+		<span>Timer 2: </span><span id="timr2"></span><br>
+		<span>Timer 3: </span><span id="timr3"></span><br>
+	</div>
+	<script>
+		const deviceId ='CYURD002'
+		const statu = deviceId+'/status'
+		const tmr = deviceId+'/tmr'
+		const progs = deviceId+'/progs'
+		const cmd = deviceId +'/cmd'
+		const devt = deviceId +'/time'
+		const devtim = deviceId +'/devtime'
+		const sched = deviceId +'/sched'
+		//var client = mqtt.connect('ws://10.0.1.100:3333')
+		var client = mqtt.connect('ws://162.217.250.109:3333')
+		var v = document.getElementById("tbox")
+		var m = document.getElementById("mbox")
+		var crement=10;
+		//console.log(v.value)
+
+		var onoff = 1
+		function uclicked(){
+			//document.getElementById('lue').innerHTML=onoff
+			onoff=!onoff;
+			var thecmd =  "{\"heat\":"+onoff*1+",\"auto\":1,\"hilimit\":80,\"lolimit\":74,\"empty\":0}"
+			console.log(thecmd);
+			client.publish(cmd, thecmd)
+		}
+		function empty(){
+			var thecmd =  "{\"heat\":"+onoff*1+",\"auto\":1,\"hilimit\":85,\"lolimit\":75,\"empty\":1}"
+			console.log(thecmd);
+			client.publish(cmd, thecmd)			
+		}
+		function devtime(){
+			var thecmd =  "trigger time from web cliient"
+			console.log(thecmd);
+			console.log(devt);
+			client.publish(devt, thecmd)			
+		}
+		function vchanged(){
+			//console.log("val changed")
+		}
+		function mchanged(){
+			console.log("st changed")
+		}
+		function newCrement(){
+			console.log("crement changed")
+			sendSchedule();
+		}
+		function sendSchedule(){
+			//console.log(v.value);
+			crement = document.getElementById("crement").value
+			var d = new Date();
+			var strtmin = m.value;
+			var d0 = Date.now()+60000*strtmin
+			var d2 = new Date(d0);
+
+			var setmin = v.value
+			var d3 = new Date(d0+ 60000*(setmin));
+			console.log(d);
+			var hr = d2.getHours();
+			var mi = d2.getMinutes();
+			var hr3 = d3.getHours();
+			var mi3 = d3.getMinutes();
+			console.log(`${d2} - ${hr}:${mi}`)
+			console.log(`${d3} - ${hr3}:${mi3}`)
+			var thecmd =  "{\"crement\":"+crement+",\"serels\":[0,99,1,2,99],\"progs\":[[[0,0,80,77],[6,12,82,75],[8,20,85,78],["+hr+","+mi+",78,74],["+hr3+","+mi3+",83,79]],[[0,0,58],[18,0,68],[21,30,58]],[[0,0,0],["+hr+","+mi+",1],["+hr3+","+mi3+",0]]]}";
+			console.log(thecmd);
+			client.publish(sched, thecmd)			
+		}
+		client.on('connect', function(){
+			console.log('maybe connected')
+			client.subscribe(devtim)
+			client.subscribe(statu) 
+			client.subscribe(tmr) 
+			client.subscribe(progs)
+			client.on('message', function(topic, payload) {
+				var pls = payload.toString()
+				var plo = JSON.parse(pls)
+				console.log(plo)
+				console.log('['+topic+'] '+payload.toString())
+		    var sp = topic.split("/")
+		    var job = sp[1];	
+		    switch(job){
+		    	case "status":
+						document.getElementById('lue').innerHTML=plo.heat
+						document.getElementById('temp1').innerHTML=plo.temp1
+						break;
+					case "tmr":
+						document.getElementById('timr1').innerHTML=plo.timr1
+						document.getElementById('timr2').innerHTML=plo.timr2
+						document.getElementById('timr3').innerHTML=plo.timr3
+						break;
+		    }			
+			});	
+			client.publish('presence', 'Web Client is alive.. Test Ping! ');
+		});
+	</script>
+</body>
+</html>
+
+//[CYURD001/progs] {"crement":5,"serels":[0,99,1,2],"progs":[
+//[[0,0,80,77],[6,12,82,75],[8,20,85,78],[16,0,78,74],[16,15,83,79]],
+//[[0,0,58],[18,0,68],[21,30,58]],
+//[[0,0,0],[16,0,1],[16,15,0]]]}
+
+var thecmd =  "{\"crement\":"+crement+",\"serels\":[0,99,1,2],\"progs\":
+[[[0,0,80,77],[6,12,82,75],[8,20,85,78],["+hr+","+mi+",78,74],["+hr3+","+mi3+",83,79]],
+[[0,0,58],[18,0,68],[21,30,58]],
+[[0,0,0],["+hr+","+mi+",1],["+hr3+","+mi3+",0]]]}";
