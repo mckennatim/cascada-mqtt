@@ -16,14 +16,24 @@
 #include <TimeAlarms.h>
 #include "MQclient.h" //globals(extern) NEW_MAIL, itopic, ipayload
 #include "STATE.h"
-#include "PORTS.h"
 #include "TMR.h"
+#include "PORTS.h"
 #include "Cmd.h"
 #include "Reqs.h"
 #include "Sched.h"
 
 PORTS po {5, 16, 15, 13, 12, 4, 14};
-#define ONE_WIRE_BUS po.ds18b20 
+//PORTS po {5, 16, 15, 13, 12, 4, 14};
+//{temp1, temp2, timr1, timr2, timr3 ,ds18b20}
+//{io5d1, io16d0, io15d8, io13d7, io12d6, io4d2, io14d5} wemos d1 mini
+//STATE st {42, 38, 0, 82, 73, 1, 1, 0};
+//{temp1, temp2, heat, hilimit, lolimit, AUTOMA, HAY_CNG, NEEDS_RESET}
+STATE st {42,0,82,73,71,0,85,63,0,0,0,1,1,0};
+//{temp1,temp1r,temp1hi,temp1lo,temp2,temp2r,temp2hi,temp2lo,timr1r,timr2r,timr3r,ATOMA,HAY_CNG, NEEDS_RESET}
+TMR tmr {0,0,0,3,5,0};
+//timr1, timr2, timr3, numtmrs, crement, IS_ON
+
+#define ONE_WIRE_BUS po.ds18b20  // DS18B20 pin
 
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature DS18B20(&oneWire);
@@ -36,10 +46,6 @@ MQclient mq(devid);
 
 int NEW_ALARM = -1;
 int IS_ON = 0;
-STATE st {2, 5, 42, 38, 0, 82, 73, 1, 1, 0};
-//{IO2D4, ALED, temp1, temp2, heat, hilimit, lolimit, AUTOMA, HAY_CNG, NEEDS_RESET}
-TMR tmr {0,0,0,3,5,0};
-//timr1, timr2, timr3, numtmrs, crement, IS_ON
 Sched sched;
 
 
@@ -90,7 +96,7 @@ void processInc(){
           Serial.println("in cmd");
           Cmd cmd;
           cmd.deserialize(ipayload);
-          cmd.act(st);
+          cmd.act(st, po);
           break; 
         default:           
           Serial.println("in default");
@@ -102,7 +108,7 @@ void processInc(){
 
 void publishState(){
   char astr[120];
-  sprintf(astr, "{\"temp1\":%d, \"temp2\":%d, \"heat\":%d, \"hilimit\":%d, \"lolimit\":%d, \"auto\":%d}", st.temp1, st.temp2, st.heat, st.hilimit, st.lolimit, st.AUTOMA);
+  sprintf(astr, "{\"temp1\":{\"temp\":%d,\"relay\":%d,\"hilimit\":%d,\"lolimit\":%d},\"temp2\":{\"temp\":%d,\"relay\":%d,\"hilimit\":%d,\"lolimit\":%d},\"timr1\":{\"relay\":%d},\"timr2\":{\"relay\":%d},\"timr3\":{\"relay\":%d}, \"auto\":%d}", st.temp1, st.temp1r, st.temp1hi, st.temp1lo, st.temp2, st.temp2r, st.temp2hi, st.temp2lo, st.timr1r, st.timr2r, st.timr3r, st.AUTOMA);
   char status[20];
   strcpy(status,devid);
   strcat(status,"/status");
@@ -127,32 +133,32 @@ void publishTmr(){
 }
 
 void readTemps(){
-  DS18B20.requestTemperatures(); 
-  int temp1 = (int)DS18B20.getTempFByIndex(0);
-  int temp2 = (int)DS18B20.getTempFByIndex(1);
-  if(temp1 != st.temp1){
-    st.temp1=temp1;
-    st.HAY_CNG=1;
-  }
-  if(temp2 != st.temp2){
-    st.temp2=temp2;
-    st.HAY_CNG=1;
-  }
+	DS18B20.requestTemperatures(); 
+	int temp1 = (int)DS18B20.getTempFByIndex(0);
+	int temp2 = (int)DS18B20.getTempFByIndex(1);
+	if(temp1 != st.temp1){
+		st.temp1=temp1;
+		st.HAY_CNG=1;
+	}
+	if(temp2 != st.temp2){
+		st.temp2=temp2;
+		st.HAY_CNG=1;
+	}
 }
 
 void controlHeat(){
-  bool heat = st.heat;
-  if (st.temp1 >= st.hilimit){
-    heat=0;
-  } 
-  if (st.temp1 <= st.lolimit){
-    heat=1;
-  } 
-  if (heat != st.heat){
-    st.heat = heat;
-    digitalWrite(st.ALED, st.heat);
-    st.HAY_CNG= 1;
-  }
+	bool heat = st.temp1r;
+	if (st.temp1 >= st.temp1hi){
+		heat=0;
+	}	
+	if (st.temp1 <= st.temp1lo){
+		heat=1;
+	}	
+	if (heat != st.temp1r){
+		st.temp1r = heat;
+		digitalWrite(po.temp1, st.temp1r);
+		st.HAY_CNG= 1;
+	}
 }
 
 void cbtemp0(){
@@ -160,10 +166,10 @@ void cbtemp0(){
 }
 
 void setup(){
-  Serial.begin(115200);
-  EEPROM.begin(512);
-  Serial.println();
-  Serial.println("--------------------------");
+	Serial.begin(115200);
+	EEPROM.begin(512);
+	Serial.println();
+	Serial.println("--------------------------");
   Serial.println("ESP8266 mqttdemo");
   Serial.println("--------------------------");
   getOnline();
@@ -175,7 +181,7 @@ void setup(){
   pinMode(po.timr1, OUTPUT);
   pinMode(po.timr2, OUTPUT);
   pinMode(po.timr3, OUTPUT);
-  digitalWrite(po.temp1, st.heat);
+  digitalWrite(po.temp1, st.temp1r);
   digitalWrite(po.timr3, LOW);
   req.stime();
   
@@ -202,15 +208,15 @@ void loop(){
   //   sched.actProgs(NEW_ALARM, cur, st, tmr);
   // }
   Alarm.delay(100);
-  server.handleClient();
-  if(NEW_MAIL){
+	server.handleClient();
+	if(NEW_MAIL){
     processInc();
   }
-  if(!client.connected() && !NEEDS_RESET){
-     mq.reconn(client);
-  }else{
-    client.loop();
-  }
+	if(!client.connected() && !NEEDS_RESET){
+		 mq.reconn(client);
+	}else{
+		client.loop();
+	}
   inow = millis();
   if(inow-schedcrement > tmr.crement*1000){
     schedcrement = inow;
@@ -220,15 +226,15 @@ void loop(){
     }
   }
   if (inow - before > 1000) {
-    before = inow;
-    if(st.AUTOMA){
-      readTemps();
-      controlHeat();
-    }
-    if(st.HAY_CNG){
+  	before = inow;
+  	if(st.AUTOMA){
+  		//readTemps();
+  		//controlHeat();
+  	}
+  	if(st.HAY_CNG){
       //console.log("example console.log entry");
-      publishState();
-      st.HAY_CNG=0;
-    }
-  } 
+  		publishState();
+  		st.HAY_CNG=0;
+  	}
+  }	
 }

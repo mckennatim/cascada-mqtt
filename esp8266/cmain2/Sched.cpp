@@ -63,7 +63,7 @@ void Sched::printSched(int i){
 
 bool Sched::deseriProgs(char* kstr){
 	//DynamicJsonBuffer jsonBuffer;
-  StaticJsonBuffer<3000> jsonBuffer;
+  StaticJsonBuffer<2000> jsonBuffer;
 	JsonObject& rot = jsonBuffer.parseObject(kstr);
 	crement = rot["crement"];
 	JsonArray& sere = rot["serels"];
@@ -74,18 +74,18 @@ bool Sched::deseriProgs(char* kstr){
 	}
 	nsr = root.size();
 	Serial.println("");  
-	Serial.print("the # of sinks is: ");
+	Serial.print("the # of sinks is: "); //nsr in num of progs
 	Serial.println(nsr);	
 	for(int i = 0; i<nsr; i++){
 		JsonArray& asnk = root[i]; //asnk[4][3] the prog for some sensor/relay
 		events[i] = root[i].size(); //4 the number events in that sen/rel prog
-		Serial.println(schedArr[idxOsenrels(i)]);//finds the name of the sen/rel by scanning for 'i'  and grabbing the index
+		Serial.println(schedArr[idxOsenrels(i)]); //finds the name of the sen/rel by scanning for 'i'  and grabbing the index
 		// Serial.println(idxOsenrels(i));
 		for(int j = 0; j<events[i]; j++){//4 for each event of i
-			int bsz = asnk[j].size();//how much data is here
-			haynRset[i] = bsz-2;// the first two items are hour min haynRset tells you how many data elements are included in this program 
-			for(int k=0; k<bsz;k++){
-				progs[i][j][k] = asnk[j][k];//copy the data to the 3d progs array
+			int bsz = asnk[j].size(); //how much data is here
+			haynRset[i] = bsz-2; // the first two items are hour min haynRset tells you how many data elements are included in this program 
+			for(int k=0; k<bsz;k++){ 
+				progs[i][j][k] = asnk[j][k]; //copy the data to the 3d progs array 
 				Serial.print(progs[i][j][k]);
 				Serial.print(",");
 			}
@@ -120,7 +120,7 @@ void Sched::resetAlarm(int i, int &cur, int &nxt){
 			}
 		}
 		if (hour() < progs[idx][j][0]){
-			Serial.print("should be at: ");
+			Serial.print("should breat at: ");
 			Serial.println(j);
 			Serial.println(progs[idx][j][0]);
 			cur= j-1;
@@ -138,88 +138,9 @@ void Sched::resetAlarm(int i, int &cur, int &nxt){
 	Serial.print(":");
 	Serial.print(minute());
 	Serial.println();
-	// Serial.print("[");
-	// Serial.print(progs[idx][cur][0]);
-	// Serial.print(":");
-	// Serial.print(progs[idx][cur][1]);
-	// Serial.print("->");
-	// Serial.print(progs[idx][cur][2]);
-	// Serial.println("]");
-	//actProgs(i, cur);
 }
 
-
-void Sched::actProgs(int idx, int cur, STATE& st, TMR& tmr){
-	int ii = senrels[idx];
-	switch(idx){
-		case 0:
-			Serial.println("case temp1");
-			// Serial.println(cur);
-			// Serial.println(85);
-			// Serial.println(progs[0][2][2]);
-			// Serial.println(progs[ii][cur-1][2]);
-			// Serial.println(progs[ii][cur-1][3]);
-			st.hilimit = progs[ii][cur-1][2];
-			st.lolimit = progs[ii][cur-1][3];
-			st.HAY_CNG=1;
-			Alarm.alarmOnce(progs[ii][cur][0],progs[ii][cur][1], 0, cbtemp1);
-			break;
-		case 1:
-			Serial.println("case temp2");
-			break;
-		case 2:
-			Serial.print("setpoint tmr1 is set for: ");
-			Serial.print(progs[ii][cur][0]);
-			Serial.print(":");
-			Serial.println(progs[ii][cur][1]);	
-			Serial.print("num allocated = ");
-			Serial.println(Alarm.count());		
-			Alarm.alarmOnce(progs[ii][cur][0],progs[ii][cur][1], 0, cbtmr1);
-			break;
-		case 3:
-			Serial.print("countdown tmr2 starts at: ");
-			if(progs[ii][cur][2]==1){
-				int fhr = progs[ii][cur+1][0];
-				int fmi = progs[ii][cur+1][1];
-				int shr = progs[ii][cur][0];
-				int smin = progs[ii][cur][1];
-				int mi;
-				int hr;
-				if(fmi< smin){
-					mi = 60-smin+fmi;
-					shr++;
-				}else {
-					mi = fmi -smin;
-				}
-				hr = fhr - shr;
-				int dur = 60*hr + mi;
-				tmr.timr2= dur;
-				Serial.println(dur);
-			}else {
-				Serial.println("countdown is OVER");
-			}
-			Serial.println("cbtmr2ING cbtmr2ING cbtmr2ING");
-			Serial.print("countdown timr2 is set for: ");
-			Serial.print(progs[ii][cur+1][0]);
-			Serial.print(":");
-			Serial.println(progs[ii][cur+1][1]);
-      //Alarm.alarmOnce(hour(), minute()+1,0,cbtmr2);			
-
-			//Alarm.alarmOnce(progs[ii][cur+1][0],progs[ii][cur+1][1], 0, cbtmr2);			
-			break;
-		case 4:
-			Serial.println("case tmr3");
-      Serial.println("TING TING TING");
-			Serial.print(hour());
-			Serial.print(":");
-			Serial.println(minute()+1);      
-      Alarm.alarmOnce(hour(), minute()+1,0,abdd);			
-			break;
-	}
-	NEW_MAIL=0;
-	NEW_ALARM=-1;
-}
-
+//first time through NEW_ALARM=31=11111
 void Sched::actProgs2(TMR& tmr, STATE& st){
 	tmr.crement=crement;
 	Serial.print("in actProgs2, NEW_ALARM=");
@@ -248,10 +169,10 @@ void Sched::actProgs2(TMR& tmr, STATE& st){
 		Serial.print(progs[ii][cur][2]);	
 		Serial.print(",");
 		Serial.println(progs[ii][cur][3]);	
-		st.hilimit = progs[ii][cur][2];
-		st.lolimit = progs[ii][cur][3];
+		st.temp1hi = progs[ii][cur][2];
+		st.temp1lo = progs[ii][cur][3];
 		st.HAY_CNG=1;
-		Alarm.alarmOnce(progs[ii][nxt][0],progs[ii][nxt][1], second(), bm1);
+		Alarm.alarmOnce(progs[ii][nxt][0],progs[ii][nxt][1], 0, bm1);
 	}
 	if((NEW_ALARM & 2) == 2){
 		Serial.print("temp2 w mask61 :");
@@ -309,18 +230,6 @@ void Sched::actProgs2(TMR& tmr, STATE& st){
 		int cur = 0;
 		int nxt = 0;
 		resetAlarm(i0,cur, nxt);
-		Serial.print("current: ");
-		Serial.println(cur);
-		Serial.print("next: ");
-		Serial.println(nxt);
-		Serial.print("current alarm is for: ");
-		Serial.print(progs[ii][cur][0]);
-		Serial.print(":");
-		Serial.print(progs[ii][cur][1]);	
-		Serial.print("->");
-		Serial.println(progs[ii][cur][2]);				
-			Serial.print("num allocated = ");
-			Serial.println(Alarm.count());		
 		if(progs[ii][cur][2]==1){
 			Serial.print("countdown tmr2 starts at: ");
 			int fhr = progs[ii][cur+1][0];
@@ -411,11 +320,11 @@ void Sched::updateTmrs(TMR& tmr, PubSubClient& client, STATE& st, PORTS& po){
 		}
 		if (digitalRead(po.timr1) != hl){
 			digitalWrite(po.timr1, hl);
-		}		// Serial.print("updating timer 1 to: ");
-		// Serial.println(tmr.timr1);
-		// // Serial.print("timr1: ");
-		// Serial.print(hl);
-		// Serial.println(digitalRead(po.timr1));		
+		}
+		// Serial.print("timr1 port-> hl ");
+		// Serial.print(po.timr1);
+		// Serial.print("-> ");
+		// Serial.println(hl);
 	}	
 	if((IS_ON & 8) == 8){
 		int hl = HIGH;
@@ -428,16 +337,10 @@ void Sched::updateTmrs(TMR& tmr, PubSubClient& client, STATE& st, PORTS& po){
 		if (digitalRead(po.timr2) != hl){
 			digitalWrite(po.timr2, hl);
 		}
-		// Serial.print("timr2: ");
-		// Serial.print(hl);
-		// Serial.println(digitalRead(po.timr2));
 	}	
 	if((IS_ON & 16) == 16){
 		int hl = HIGH;
 		tmr.timr3 = tmr.timr3 - tmr.crement;
-		Serial.print("updating timer 3 to: ");
-		Serial.println(tmr.timr3);		
-
 		if(tmr.timr3 <= 0){
 			hl = LOW;
 			tmr.timr3 = 0;
@@ -445,39 +348,13 @@ void Sched::updateTmrs(TMR& tmr, PubSubClient& client, STATE& st, PORTS& po){
 		}
 		if (digitalRead(po.timr3) != hl){
 			digitalWrite(po.timr3, hl);
-		}		
-
-		// Serial.print("timr3: ");
-		// Serial.print(hl);
-		// Serial.println(digitalRead(po.timr3));		
+		}
+		// Serial.print("timr3 port-> hl ");
+		// Serial.print(po.timr3);
+		// Serial.print("-> ");
+		// Serial.println(hl);
 	}
 	tmr.IS_ON	= IS_ON;
-	// Serial.print(tmr.crement);
-	// Serial.println(" seconds pass");
-}
-
-void cbtmr1(){
-	Serial.println("in cbtmr1");
-	NEW_ALARM=2;
-}
-void cbtmr2(){
-	Serial.println("in cbtmr2");
-	NEW_ALARM=3;
-}
-void cbtemp1(){
-	Serial.println("in cbtemp1");
-	NEW_ALARM=0;
-}
-
-void abdd(){
-	Serial.println("in abdd");
-  int i=0;
-  switch(i){
-    case 0:
-      // Serial.println("TING TING TING");
-      // Alarm.alarmOnce(hour(), minute()+1,0,abdd);
-      NEW_ALARM=4;
-  }	
 }
 
 void bm32(){
@@ -516,3 +393,4 @@ void bm1(){
 	IS_ON = IS_ON | 1;
 	Serial.println(NEW_ALARM);
 }
+

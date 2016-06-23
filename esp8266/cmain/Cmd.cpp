@@ -45,5 +45,5 @@ void Cmd::act(STATE& st){
       st.NEEDS_RESET=1;    
     }  
     NEW_MAIL=0;    
-  } 	
+  }   
 }
