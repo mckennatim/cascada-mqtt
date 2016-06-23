@@ -5,6 +5,41 @@
 inherits code from demiot and cascada-webpack
 
 ## tags
+### 02-messing_w_structs
+rule: you can't set the value of a (complex)struct outside of a function. You need something like 
+
+    void initState(){
+      ste = {{0,80,70},{0,90,80},{1},{1},{1},1,0,0,1,0};
+      ste.temp1.hilimit=85;
+    }
+
+this wemos is setup for 2 temp sensors and 3 timers;
+
+    struct temp_t {
+      bool state;
+      int hilimit;
+      int lolimit;
+    };
+
+    struct timr_t{
+      bool state;
+    };
+
+    struct state_t{
+      temp_t temp1;
+      temp_t temp2;
+      timr_t timr1;
+      timr_t timr2;
+      timr_t timr3;
+      bool AUTOMA;
+      bool sndStatus;
+      bool sndSched;
+      bool HAY_CNG;
+      bool NEEDS_RESET;   
+    };
+
+Maybe all the structs should be in SETUP.h: state_t(temp_t,timr_t),ports, progs? eh
+
 ### 01-recover_from_failure
 lesson#1: don't develop on esp8266 without compiling/uploading continuously. Contrary to internet consensus. Stack errors and crashes can happen easily from a change in application code and they are ridiculously hard to figure out.
 
@@ -111,6 +146,20 @@ setup
 `{name: 'temp1', 'state':0, 'hilimit': 87, 'lolimit': 41}`
 or 
 `{name: 'timr1', state: 1}` that will serve to change until next program event
+`{name: 'empty'}`
+`{name: 'sndStatus'}`
+`{name: 'sndSched'}`
+`{name: 'auto', state: 1}`
+or 
+`{name:"timr1", ["state", "hilimit", "lolimit"], [0,84,46]}`
+or
+`{name"'temp1, [0, 84, 46]`
+built in data structs
+temp1.state
+temp1.hilimit
+temp1.lolimit
+
+
 
 Are timers just as particular case of thermostat?
 * a sensor&sched controlled relay changes state (activates a relay) based upon a combination of a sensor reading and the current parameters on what values cause the sensor to change state.

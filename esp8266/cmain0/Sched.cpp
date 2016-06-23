@@ -138,8 +138,87 @@ void Sched::resetAlarm(int i, int &cur, int &nxt){
 	Serial.print(":");
 	Serial.print(minute());
 	Serial.println();
+	// Serial.print("[");
+	// Serial.print(progs[idx][cur][0]);
+	// Serial.print(":");
+	// Serial.print(progs[idx][cur][1]);
+	// Serial.print("->");
+	// Serial.print(progs[idx][cur][2]);
+	// Serial.println("]");
+	//actProgs(i, cur);
 }
 
+
+void Sched::actProgs(int idx, int cur, STATE& st, TMR& tmr){
+	int ii = senrels[idx];
+	switch(idx){
+		case 0:
+			Serial.println("case temp1");
+			// Serial.println(cur);
+			// Serial.println(85);
+			// Serial.println(progs[0][2][2]);
+			// Serial.println(progs[ii][cur-1][2]);
+			// Serial.println(progs[ii][cur-1][3]);
+			st.hilimit = progs[ii][cur-1][2];
+			st.lolimit = progs[ii][cur-1][3];
+			st.HAY_CNG=1;
+			Alarm.alarmOnce(progs[ii][cur][0],progs[ii][cur][1], 0, cbtemp1);
+			break;
+		case 1:
+			Serial.println("case temp2");
+			break;
+		case 2:
+			Serial.print("setpoint tmr1 is set for: ");
+			Serial.print(progs[ii][cur][0]);
+			Serial.print(":");
+			Serial.println(progs[ii][cur][1]);	
+			Serial.print("num allocated = ");
+			Serial.println(Alarm.count());		
+			Alarm.alarmOnce(progs[ii][cur][0],progs[ii][cur][1], 0, cbtmr1);
+			break;
+		case 3:
+			Serial.print("countdown tmr2 starts at: ");
+			if(progs[ii][cur][2]==1){
+				int fhr = progs[ii][cur+1][0];
+				int fmi = progs[ii][cur+1][1];
+				int shr = progs[ii][cur][0];
+				int smin = progs[ii][cur][1];
+				int mi;
+				int hr;
+				if(fmi< smin){
+					mi = 60-smin+fmi;
+					shr++;
+				}else {
+					mi = fmi -smin;
+				}
+				hr = fhr - shr;
+				int dur = 60*hr + mi;
+				tmr.timr2= dur;
+				Serial.println(dur);
+			}else {
+				Serial.println("countdown is OVER");
+			}
+			Serial.println("cbtmr2ING cbtmr2ING cbtmr2ING");
+			Serial.print("countdown timr2 is set for: ");
+			Serial.print(progs[ii][cur+1][0]);
+			Serial.print(":");
+			Serial.println(progs[ii][cur+1][1]);
+      //Alarm.alarmOnce(hour(), minute()+1,0,cbtmr2);			
+
+			//Alarm.alarmOnce(progs[ii][cur+1][0],progs[ii][cur+1][1], 0, cbtmr2);			
+			break;
+		case 4:
+			Serial.println("case tmr3");
+      Serial.println("TING TING TING");
+			Serial.print(hour());
+			Serial.print(":");
+			Serial.println(minute()+1);      
+      Alarm.alarmOnce(hour(), minute()+1,0,abdd);			
+			break;
+	}
+	NEW_MAIL=0;
+	NEW_ALARM=-1;
+}
 
 void Sched::actProgs2(TMR& tmr, STATE& st){
 	tmr.crement=crement;
@@ -356,8 +435,8 @@ void Sched::updateTmrs(TMR& tmr, PubSubClient& client, STATE& st, PORTS& po){
 	if((IS_ON & 16) == 16){
 		int hl = HIGH;
 		tmr.timr3 = tmr.timr3 - tmr.crement;
-		// Serial.print("updating timer 3 to: ");
-		// Serial.println(tmr.timr3);		
+		Serial.print("updating timer 3 to: ");
+		Serial.println(tmr.timr3);		
 
 		if(tmr.timr3 <= 0){
 			hl = LOW;

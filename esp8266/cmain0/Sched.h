@@ -28,6 +28,7 @@ public:
 	bool deseriProgs(char* kstr); 
 	void bootstrapSched();
 	void resetAlarm(int i, int &cur, int &nxt);
+	void actProgs(int idx, int cur, STATE& st, TMR& tmr);
 	void actProgs2(TMR& tmr, STATE& st);
 	int idxOsenrels(int j);
 	void updateTmrs(TMR& tmr, PubSubClient& client, STATE& st, PORTS& po);

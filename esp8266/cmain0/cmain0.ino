@@ -42,14 +42,6 @@ TMR tmr {0,0,0,3,5,0};
 //timr1, timr2, timr3, numtmrs, crement, IS_ON
 Sched sched;
 
-state_t ste;
-//ste = {{0,80,70},{0,90,80},{1},{1},{1},1,0,0,1,0};
-
-void initState(){
-  ste = {{0,80,70},{0,90,80},{0},{0},{0},1,0,0,1,0};
-  ste.temp1.hilimit=85;
-}
-
 
 const int numcmds = 3;
 char incmd[][10]={"devtime", "progs", "cmd"};
@@ -174,11 +166,6 @@ void setup(){
   Serial.println("--------------------------");
   Serial.println("ESP8266 mqttdemo");
   Serial.println("--------------------------");
-  initState();
-  Serial.print(ste.temp2.state);
-  Serial.print(ste.temp2.hilimit);
-  Serial.print(ste.temp2.lolimit);
-  Serial.println(ste.temp1.hilimit);
   getOnline();
   client.setServer(ip, 1883);
   client.setCallback(handleCallback); 

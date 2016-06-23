@@ -9,16 +9,10 @@
 bool Cmd::deserialize(char* kstr){
   StaticJsonBuffer<200> jsonBuffer;
   JsonObject& root = jsonBuffer.parseObject(kstr);
-  Serial.println(root.size());
   heat = root["heat"];
   automa = root["auto"];
-  if(root["bolimit"]){
-    Serial.println("hay himiti");
-    hilimit = root["hilimit"];
-  }else{
-    Serial.println("No hay himiti");
-  };
-  lolimit = root["bolimit"];
+  hilimit = root["hilimit"];
+  lolimit = root["lolimit"];
   empty = root["empty"];  
   return root.success();
 }
