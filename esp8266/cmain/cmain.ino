@@ -46,8 +46,9 @@ state_t ste;
 //ste = {{0,80,70},{0,90,80},{1},{1},{1},1,0,0,1,0};
 
 void initState(){
-  ste = {{0,80,70},{0,90,80},{0},{0},{0},1,0,0,1,0};
+  ste = {{0,80,70},{0,90,80},{0},{0},{0},1,0,1,0};
   ste.temp1.hilimit=85;
+  ste.temp1 = {1,94,77};
 }
 
 
@@ -92,13 +93,14 @@ void processInc(){
           NEW_ALARM=31;
           IS_ON=31;
           Alarm.clear();
-          sched.actProgs2(tmr, st);
+          sched.actProgs2(tmr, ste);
           break;            
         case 2:
           Serial.println("in cmd");
           Cmd cmd;
-          cmd.deserialize(ipayload);
-          cmd.act(st);
+          // cmd.deserialize(ipayload);
+          // cmd.act(st);
+          cmd.deserialize2(ipayload,ste, po, tmr);
           break; 
         default:           
           Serial.println("in default");
@@ -175,10 +177,10 @@ void setup(){
   Serial.println("ESP8266 mqttdemo");
   Serial.println("--------------------------");
   initState();
-  Serial.print(ste.temp2.state);
-  Serial.print(ste.temp2.hilimit);
-  Serial.print(ste.temp2.lolimit);
-  Serial.println(ste.temp1.hilimit);
+  Serial.print(ste.temp1.state);
+  Serial.print(ste.temp1.hilimit);
+  Serial.print(ste.temp1.lolimit);
+  Serial.println(ste.temp2.hilimit);
   getOnline();
   client.setServer(ip, 1883);
   client.setCallback(handleCallback); 
@@ -207,7 +209,7 @@ time_t inow;
 
 void loop(){
   if(NEW_ALARM>0){
-    sched.actProgs2(tmr, st);
+    sched.actProgs2(tmr, ste);
   }
   // if(NEW_ALARM>-1){
   //   int cur = 0;
@@ -228,7 +230,7 @@ void loop(){
   if(inow-schedcrement > tmr.crement*1000){
     schedcrement = inow;
     if(IS_ON > 0){
-      sched.updateTmrs(tmr, client, st, po);
+      sched.updateTmrs(tmr, client, po);
       publishTmr();
     }
   }

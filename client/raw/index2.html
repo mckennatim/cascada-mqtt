@@ -18,6 +18,9 @@
 	<h1>read and change device</h1>
 	<span  id="temp1"></span><br>
 	roof heater on  ? <span id='lue'></span><br>
+	<input type="text" id="srid" value=0 size="1">
+	<input type="text" id="srda" value=0 size="4">
+	<button id="button" onclick="acmd()">one command</button><br>
 	<button id="button" onclick="uclicked()">toggle device</button>
 	<button id="button3" onclick="devtime()">devtime</button>
 	<button id="button3" onclick="sendSchedule()">send schedule</button><br>
@@ -65,6 +68,8 @@
 		var m3 = document.getElementById("mbox3")
 		var wt = document.getElementById("wt")
 		var onof = document.getElementById("onoff")
+		var srid = document.getElementById("srid")
+		var srda = document.getElementById("srda")
 		var crement=10;
 		//console.log(v.value)
 
@@ -73,6 +78,23 @@
 			//document.getElementById('lue').innerHTML=onoff
 			onoff=!onoff;
 			var thecmd =  "{\"heat\":"+onoff*1+",\"auto\":1,\"hilimit\":80,\"lolimit\":74,\"empty\":0}"
+			console.log(thecmd);
+			client.publish(cmd, thecmd)
+		}
+		function acmd(){
+			var id =srid.value
+			var str = srda.value
+			var arr = str.slice(1,-1).split(',').map(function(e){return parseInt(e)})
+			var thecmd =  `{\"id\":${id}`
+			var sl = str.length
+			if (sl>1){
+				thecmd+=`,\"darr\":[${str}]}`
+			}else if(sl==1){
+				thecmd+= `,\"data\":${str}}`
+			}else{
+				thecmd+='}'
+			}
+			console.log(str)
 			console.log(thecmd);
 			client.publish(cmd, thecmd)
 		}

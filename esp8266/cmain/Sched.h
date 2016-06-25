@@ -28,10 +28,10 @@ public:
 	bool deseriProgs(char* kstr); 
 	void bootstrapSched();
 	void resetAlarm(int i, int &cur, int &nxt);
-	void actProgs2(TMR& tmr, STATE& st);
+	void actProgs2(TMR& tmr, state_t& ste);
 	int idxOsenrels(int j);
-	void updateTmrs(TMR& tmr, PubSubClient& client, STATE& st, PORTS& po);
-	//allocate for 8 sensor/relays with 6 scheduled events/day and 
+	void updateTmrs(TMR& tmr, PubSubClient& client, PORTS& po);
+	//allocate  for 8 sensor/relays with 6 scheduled events/day and 
 	// hr, min + 2 settings they can affect
 	int nsr; //number of programs
 	int seresz; //sizeof senrels

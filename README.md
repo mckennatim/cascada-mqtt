@@ -5,7 +5,12 @@
 inherits code from demiot and cascada-webpack
 
 ## tags
-### 02-messing_w_structs
+### 03-generalizing_state
+might still be a little cludgy. Sched::updateTimers checks for time left on timers and keeps them on if not zero so CMD::deserialize2 has to explicitly set them to zero.
+
+### 02-messing_w_structs 
+todo: retain the state of other senrels
+
 rule: you can't set the value of a (complex)struct outside of a function. You need something like 
 
     void initState(){
@@ -154,10 +159,24 @@ or
 `{name:"timr1", ["state", "hilimit", "lolimit"], [0,84,46]}`
 or
 `{name"'temp1, [0, 84, 46]`
+or 
+`{id:1, darr: [0,84,45]}`
+`{id:2, data: 1}`
+
+    int id = rot["id"]
+    if(rot["data"]){
+      data = copy data
+    }
+    if(rot["flag"]){
+      flag = rot["flag"]
+    }
 built in data structs
 temp1.state
 temp1.hilimit
 temp1.lolimit
+or
+
+
 
 
 

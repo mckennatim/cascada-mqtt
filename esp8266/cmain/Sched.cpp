@@ -141,7 +141,7 @@ void Sched::resetAlarm(int i, int &cur, int &nxt){
 }
 
 
-void Sched::actProgs2(TMR& tmr, STATE& st){
+void Sched::actProgs2(TMR& tmr, state_t& ste){
 	tmr.crement=crement;
 	Serial.print("in actProgs2, NEW_ALARM=");
 	Serial.println(NEW_ALARM);
@@ -169,9 +169,9 @@ void Sched::actProgs2(TMR& tmr, STATE& st){
 		Serial.print(progs[ii][cur][2]);	
 		Serial.print(",");
 		Serial.println(progs[ii][cur][3]);	
-		st.hilimit = progs[ii][cur][2];
-		st.lolimit = progs[ii][cur][3];
-		st.HAY_CNG=1;
+		ste.temp1.hilimit = progs[ii][cur][2];
+		ste.temp1.lolimit = progs[ii][cur][3];
+		ste.HAY_CNG=1;
 		Alarm.alarmOnce(progs[ii][nxt][0],progs[ii][nxt][1], second(), bm1);
 	}
 	if((NEW_ALARM & 2) == 2){
@@ -321,7 +321,7 @@ void Sched::actProgs2(TMR& tmr, STATE& st){
 	}
 }
 
-void Sched::updateTmrs(TMR& tmr, PubSubClient& client, STATE& st, PORTS& po){
+void Sched::updateTmrs(TMR& tmr, PubSubClient& client, PORTS& po){
 	if((IS_ON & 4) == 4){
 		int hl = HIGH;
 		tmr.timr1 = tmr.timr1 - tmr.crement;
@@ -377,29 +377,29 @@ void Sched::updateTmrs(TMR& tmr, PubSubClient& client, STATE& st, PORTS& po){
 	// Serial.println(" seconds pass");
 }
 
-void cbtmr1(){
-	Serial.println("in cbtmr1");
-	NEW_ALARM=2;
-}
-void cbtmr2(){
-	Serial.println("in cbtmr2");
-	NEW_ALARM=3;
-}
-void cbtemp1(){
-	Serial.println("in cbtemp1");
-	NEW_ALARM=0;
-}
+// void cbtmr1(){
+// 	Serial.println("in cbtmr1");
+// 	NEW_ALARM=2;
+// }
+// void cbtmr2(){
+// 	Serial.println("in cbtmr2");
+// 	NEW_ALARM=3;
+// }
+// void cbtemp1(){
+// 	Serial.println("in cbtemp1");
+// 	NEW_ALARM=0;
+// }
 
-void abdd(){
-	Serial.println("in abdd");
-  int i=0;
-  switch(i){
-    case 0:
-      // Serial.println("TING TING TING");
-      // Alarm.alarmOnce(hour(), minute()+1,0,abdd);
-      NEW_ALARM=4;
-  }	
-}
+// void abdd(){
+// 	Serial.println("in abdd");
+//   int i=0;
+//   switch(i){
+//     case 0:
+//       // Serial.println("TING TING TING");
+//       // Alarm.alarmOnce(hour(), minute()+1,0,abdd);
+//       NEW_ALARM=4;
+//   }	
+// }
 
 void bm32(){
 	Serial.print("mask with 32 begets: ");
