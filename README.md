@@ -5,9 +5,58 @@
 inherits code from demiot and cascada-webpack
 
 ## tags
+### 04-changing_state_impl
+not quite done. Works andreports on temp sensors but not change of timr state.
 ### 03-generalizing_state
 might still be a little cludgy. Sched::updateTimers checks for time left on timers and keeps them on if not zero so CMD::deserialize2 has to explicitly set them to zero.
 
+what should status look like?
+* A device needs to advertise what its got to the app only on app setup. This structs defines what the device has got. temp_t and timr_t are its types,
+
+    struct temp_t {
+      int temp;
+      bool state;
+      int hilimit;
+      int lolimit;
+    };
+    struct timr_t{
+      bool state;
+    };
+    struct state_t{
+      temp_t temp1;
+      temp_t temp2;
+      timr_t timr1;
+      timr_t timr2;
+      timr_t timr3;
+      bool AUTOMA;
+      bool sndSched;
+      bool NEEDS_RESET;  
+      bool HAY_CNG;
+    };
+After that it just need to send `status` messages only when something changes and `timr` messages every `crement`
+
+Either the payload does it here...
+
+    switch (action.type) {
+      case "UPDATE_STATUS":
+        examine the payload, use the id to get its name, type_t
+        switch (type_t){
+          case temp_t:
+            let stst = Object.assign({},state)
+            stst[subsys[plo.id]].temp = plo.darr[0]
+            stst[subsys[plo.id]].state = plo.darr[1]
+            stst[subsys[plo.id]].hilimit = plo.darr[2]
+            stst[subsys[plo.id]].lolimit = plo.darr[3]
+            break;
+          case timr_t:
+            state[subsys[plo.id]].state = plo.darr[0]
+            break;
+        }
+      default:
+        return state;  
+
+
+If a `cmd` from the app looks like this: `CYURD001/cmd {"id":0,"darr":[1,99,55]}` then, after the change, a `status` message could look like this: `CYURD001/cmd {"id":0,"darr":[1,99,55]}`; That message could be interpreted on the client using the setup data {}. HAY_CNG is currently a boolean flag but if it were an int representing which senrel then set to -1 when no senrel is changing 
 ### 02-messing_w_structs 
 todo: retain the state of other senrels
 

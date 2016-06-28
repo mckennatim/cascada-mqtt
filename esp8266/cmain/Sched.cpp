@@ -171,7 +171,7 @@ void Sched::actProgs2(TMR& tmr, state_t& ste){
 		Serial.println(progs[ii][cur][3]);	
 		ste.temp1.hilimit = progs[ii][cur][2];
 		ste.temp1.lolimit = progs[ii][cur][3];
-		ste.HAY_CNG=1;
+		ste.HAY_CNG=0;
 		Alarm.alarmOnce(progs[ii][nxt][0],progs[ii][nxt][1], second(), bm1);
 	}
 	if((NEW_ALARM & 2) == 2){
@@ -321,7 +321,7 @@ void Sched::actProgs2(TMR& tmr, state_t& ste){
 	}
 }
 
-void Sched::updateTmrs(TMR& tmr, PubSubClient& client, PORTS& po){
+void Sched::updateTmrs(TMR& tmr, PubSubClient& client, PORTS& po, state_t& ste){
 	if((IS_ON & 4) == 4){
 		int hl = HIGH;
 		tmr.timr1 = tmr.timr1 - tmr.crement;
@@ -332,6 +332,7 @@ void Sched::updateTmrs(TMR& tmr, PubSubClient& client, PORTS& po){
 		}
 		if (digitalRead(po.timr1) != hl){
 			digitalWrite(po.timr1, hl);
+			ste.HAY_CNG=2;
 		}		// Serial.print("updating timer 1 to: ");
 		// Serial.println(tmr.timr1);
 		// // Serial.print("timr1: ");
@@ -348,6 +349,7 @@ void Sched::updateTmrs(TMR& tmr, PubSubClient& client, PORTS& po){
 		}
 		if (digitalRead(po.timr2) != hl){
 			digitalWrite(po.timr2, hl);
+			ste.HAY_CNG=3;
 		}
 		// Serial.print("timr2: ");
 		// Serial.print(hl);
@@ -366,6 +368,7 @@ void Sched::updateTmrs(TMR& tmr, PubSubClient& client, PORTS& po){
 		}
 		if (digitalRead(po.timr3) != hl){
 			digitalWrite(po.timr3, hl);
+			ste.HAY_CNG=4;
 		}		
 
 		// Serial.print("timr3: ");

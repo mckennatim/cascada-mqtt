@@ -16,6 +16,7 @@
 </head>
 <body>
 	<h1>read and change device</h1>
+	device: <input type="text" id="idev" value=CYURD0 size="12"onchange="devChanged()">
 	<span  id="temp1"></span><br>
 	roof heater on  ? <span id='lue'></span><br>
 	<input type="text" id="srid" value=0 size="1">
@@ -50,16 +51,48 @@
 		<span>Timer 3: </span><span id="timr3"></span><br>
 	</div>
 	<script>
-		const deviceId ='CYURD002'
-		const statu = deviceId+'/status'
-		const tmr = deviceId+'/tmr'
-		const progs = deviceId+'/progs'
-		const cmd = deviceId +'/cmd'
-		const devt = deviceId +'/time'
-		const devtim = deviceId +'/devtime'
-		const sched = deviceId +'/sched'
+		var dev = document.getElementById("idev")
+		//const deviceId ='CYURD002'
+		var tmr, progs, cmd, devt, devtim, sched, client;
+		function devChanged(){
+			var deviceId = dev.value
+			statu = deviceId+'/status'
+			tmr = deviceId+'/tmr'
+			progs = deviceId+'/progs'
+			cmd = deviceId +'/cmd'
+			devt = deviceId +'/time'
+			devtim = deviceId +'/devtime'
+			sched = deviceId +'/sched'
+			client = mqtt.connect('ws://162.217.250.109:3333')
+			client.on('connect', function(){
+				console.log('maybe connected')
+				client.subscribe(devtim)
+				client.subscribe(statu) 
+				client.subscribe(tmr) 
+				client.subscribe(progs)
+				client.on('message', function(topic, payload) {
+					var pls = payload.toString()
+					var plo = JSON.parse(pls)
+					console.log(plo)
+					console.log('['+topic+'] '+payload.toString())
+			    var sp = topic.split("/")
+			    var job = sp[1];	
+			    switch(job){
+			    	case "status":
+							document.getElementById('lue').innerHTML=plo.heat
+							document.getElementById('temp1').innerHTML=plo.temp1
+							break;
+						case "tmr":
+							document.getElementById('timr1').innerHTML=plo.timr1
+							document.getElementById('timr2').innerHTML=plo.timr2
+							document.getElementById('timr3').innerHTML=plo.timr3
+							break;
+			    }			
+				});	
+				client.publish('presence', 'Web Client is alive.. Test Ping! ');
+			});			
+		}
 		//var client = mqtt.connect('ws://10.0.1.100:3333')
-		var client = mqtt.connect('ws://162.217.250.109:3333')
 		var v1 = document.getElementById("tbox1")
 		var m1 = document.getElementById("mbox1")
 		var v2 = document.getElementById("tbox2")
@@ -178,33 +211,33 @@
 			client.publish(sched, thecmd)
 		}
 
-		client.on('connect', function(){
-			console.log('maybe connected')
-			client.subscribe(devtim)
-			client.subscribe(statu) 
-			client.subscribe(tmr) 
-			client.subscribe(progs)
-			client.on('message', function(topic, payload) {
-				var pls = payload.toString()
-				var plo = JSON.parse(pls)
-				console.log(plo)
-				console.log('['+topic+'] '+payload.toString())
-		    var sp = topic.split("/")
-		    var job = sp[1];	
-		    switch(job){
-		    	case "status":
-						document.getElementById('lue').innerHTML=plo.heat
-						document.getElementById('temp1').innerHTML=plo.temp1
-						break;
-					case "tmr":
-						document.getElementById('timr1').innerHTML=plo.timr1
-						document.getElementById('timr2').innerHTML=plo.timr2
-						document.getElementById('timr3').innerHTML=plo.timr3
-						break;
-		    }			
-			});	
-			client.publish('presence', 'Web Client is alive.. Test Ping! ');
-		});
+		// client.on('connect', function(){
+		// 	console.log('maybe connected')
+		// 	client.subscribe(devtim)
+		// 	client.subscribe(statu) 
+		// 	client.subscribe(tmr) 
+		// 	client.subscribe(progs)
+		// 	client.on('message', function(topic, payload) {
+		// 		var pls = payload.toString()
+		// 		var plo = JSON.parse(pls)
+		// 		console.log(plo)
+		// 		console.log('['+topic+'] '+payload.toString())
+		//     var sp = topic.split("/")
+		//     var job = sp[1];	
+		//     switch(job){
+		//     	case "status":
+		// 				document.getElementById('lue').innerHTML=plo.heat
+		// 				document.getElementById('temp1').innerHTML=plo.temp1
+		// 				break;
+		// 			case "tmr":
+		// 				document.getElementById('timr1').innerHTML=plo.timr1
+		// 				document.getElementById('timr2').innerHTML=plo.timr2
+		// 				document.getElementById('timr3').innerHTML=plo.timr3
+		// 				break;
+		//     }			
+		// 	});	
+		// 	client.publish('presence', 'Web Client is alive.. Test Ping! ');
+		// });
 	</script>
 
 

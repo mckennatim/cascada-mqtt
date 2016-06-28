@@ -37,7 +37,7 @@ MQclient mq(devid);
 int NEW_ALARM = -1;
 int IS_ON = 0;
 STATE st {2, 5, 42, 38, 0, 82, 73, 1, 1, 0};
-//{IO2D4, ALED, temp1, temp2, heat, hilimit, lolimit, AUTOMA, HAY_CNG, NEEDS_RESET}
+//{IO2D4, ALED, temp1, temp2, heat, hilimit, lolimit, AUTOMA,  HAY_CNG, }
 TMR tmr {0,0,0,3,5,0};
 //timr1, timr2, timr3, numtmrs, crement, IS_ON
 Sched sched;
@@ -46,7 +46,8 @@ state_t ste;
 //ste = {{0,80,70},{0,90,80},{1},{1},{1},1,0,0,1,0};
 
 void initState(){
-  ste = {{0,80,70},{0,90,80},{0},{0},{0},1,0,1,0};
+  //AUTOMA, NEEDS_RESET, sndSched, HAY_CNG
+  ste = {{44,0,80,50},{33,0,90,60},{0},{0},{0},1,0,0,-1};
   ste.temp1.hilimit=85;
   ste.temp1 = {1,94,77};
 }
@@ -110,9 +111,48 @@ void processInc(){
   }
 }
 
+// void publishState(){
+//   char astr[160];
+//   sprintf(astr, "{\"temp1\":%d, \"temp2\":%d, \"heat\":%d, \"hilimit\":%d, \"lolimit\":%d, \"auto\":%d}", st.temp1, st.temp2, st.heat, st.hilimit, st.lolimit, st.AUTOMA);
+//   //char astr[120];
+//   //sprintf(astr, "{\"temp1\":%d, \"temp2\":%d, \"heat\":%d, \"hilimit\":%d, \"lolimit\":%d, \"auto\":%d}", st.temp1, st.temp2, st.heat, st.hilimit, st.lolimit, st.AUTOMA);
+//   char status[20];
+//   strcpy(status,devid);
+//   strcat(status,"/status");
+//   if (client.connected()){
+//     client.publish(status, astr, true);
+//   } 
+//   Serial.print(status);
+//   Serial.println(astr);
+// }
 void publishState(){
   char astr[120];
-  sprintf(astr, "{\"temp1\":%d, \"temp2\":%d, \"heat\":%d, \"hilimit\":%d, \"lolimit\":%d, \"auto\":%d}", st.temp1, st.temp2, st.heat, st.hilimit, st.lolimit, st.AUTOMA);
+  switch(ste.HAY_CNG){
+    case 0:
+      sprintf(astr, "{\"id\":%d, \"darr\":[%d, %d, %d, %d]}", 0, ste.temp1.temp, ste.temp1.state, ste.temp1.hilimit, ste.temp1.lolimit);
+      break;
+    case 1:
+      sprintf(astr, "{\"id\":%d, \"darr\":[%d, %d, %d, %d]}", 1, ste.temp2.temp, ste.temp2.state, ste.temp2.hilimit, ste.temp2.lolimit);
+      break;
+    case 2:
+      sprintf(astr, "{\"id\":%d, \"data\":%d}", 2, ste.timr1.state);
+      break;
+    case 3:
+      sprintf(astr, "{\"id\":%d, \"data\":%d}", 3, ste.timr2.state);
+      break;
+    case 4:
+      sprintf(astr, "{\"id\":%d, \"data\":%d}", 4, ste.timr2.state);
+      break;
+    case 5:
+      sprintf(astr, "{\"id\":%d, \"data\":%d}", 5, ste.AUTOMA);
+      break;
+    case 6:
+      sprintf(astr, "{\"id\":%d, \"data\":%d}", 6, ste.AUTOMA);
+      break;
+    case 7:
+      sprintf(astr, "{\"id\":%d, \"data\":%d}", 7, ste.sndSched);
+      break;
+  }
   char status[20];
   strcpy(status,devid);
   strcat(status,"/status");
@@ -140,34 +180,46 @@ void readTemps(){
   DS18B20.requestTemperatures(); 
   int temp1 = (int)DS18B20.getTempFByIndex(0);
   int temp2 = (int)DS18B20.getTempFByIndex(1);
-  if(temp1 != st.temp1){
-    st.temp1=temp1;
-    st.HAY_CNG=1;
+  if(temp1 != ste.temp1.temp){
+    ste.temp1.temp=temp1;
+    ste.HAY_CNG=0;
   }
-  if(temp2 != st.temp2){
-    st.temp2=temp2;
-    st.HAY_CNG=1;
+  if(temp2 != ste.temp2.temp){
+    ste.temp2.temp=temp2;
+    ste.HAY_CNG=1;
   }
 }
 
 void controlHeat(){
-  bool heat = st.heat;
-  if (st.temp1 >= st.hilimit){
-    heat=0;
+  bool heat;
+  if (ste.HAY_CNG==0){
+    if (ste.temp1.temp >= ste.temp1.hilimit){
+      heat=0;
+    } 
+    if (ste.temp1.temp <= ste.temp1.lolimit){
+      heat=1;
+    } 
+    if (heat != ste.temp1.state){
+      ste.temp1.state = heat;
+      digitalWrite(po.temp1, heat);
+    }
+  } else if (ste.HAY_CNG==1){
+    if (ste.temp2.temp >= ste.temp2.hilimit){
+      heat=0;
+    } 
+    if (ste.temp2.temp <= ste.temp2.lolimit){
+      heat=1;
+    } 
+    if (heat != ste.temp2.state){
+      ste.temp2.state = heat;
+      digitalWrite(po.temp2, heat);
+    }
   } 
-  if (st.temp1 <= st.lolimit){
-    heat=1;
-  } 
-  if (heat != st.heat){
-    st.heat = heat;
-    digitalWrite(st.ALED, st.heat);
-    st.HAY_CNG= 1;
-  }
 }
 
-void cbtemp0(){
-  Serial.println("triggered cbtemp0 callback");
-}
+// void cbtemp0(){
+//   Serial.println("triggered cbtemp0 callback");
+// }
 
 void setup(){
   Serial.begin(115200);
@@ -229,21 +281,21 @@ void loop(){
   inow = millis();
   if(inow-schedcrement > tmr.crement*1000){
     schedcrement = inow;
-    if(IS_ON > 0){
-      sched.updateTmrs(tmr, client, po);
+    if(IS_ON > 3){
+      sched.updateTmrs(tmr, client, po, ste);
       publishTmr();
     }
   }
   if (inow - before > 1000) {
     before = inow;
-    if(st.AUTOMA){
+    if(ste.AUTOMA){
       readTemps();
       controlHeat();
     }
-    if(st.HAY_CNG){
+    if(ste.HAY_CNG>-1){
       //console.log("example console.log entry");
       publishState();
-      st.HAY_CNG=0;
+      ste.HAY_CNG=-1;
     }
   } 
 }

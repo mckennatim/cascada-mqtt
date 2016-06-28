@@ -10,11 +10,12 @@ struct STATE {
 	int hilimit;
 	int lolimit;
   bool AUTOMA;
-  bool HAY_CNG;
+  int HAY_CNG;
   bool NEEDS_RESET;  
 };
 
 struct temp_t {
+	int temp;
 	bool state;
 	int hilimit;
 	int lolimit;
@@ -32,9 +33,9 @@ struct state_t{
 	timr_t timr2;
 	timr_t timr3;
 	bool AUTOMA;
-	bool sndSched;
   bool NEEDS_RESET;  
-  bool HAY_CNG;
+	bool sndSched;
+  int HAY_CNG;
 };
 
 
