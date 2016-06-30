@@ -13,7 +13,7 @@
 
 char * schedArr[]={"temp1","temp2","tmr1","tmr2","tmr3"};
 //int NEW_ALARM = -1;
-
+int progs[8][6][4]={0};
 
 bool Sched::deserialize(char* kstr){
   StaticJsonBuffer<200> jsonBuffer;

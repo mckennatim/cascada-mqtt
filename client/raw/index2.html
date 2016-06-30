@@ -24,7 +24,8 @@
 	<button id="button" onclick="acmd()">one command</button><br>
 	<button id="button" onclick="uclicked()">toggle device</button>
 	<button id="button3" onclick="devtime()">devtime</button>
-	<button id="button3" onclick="sendSchedule()">send schedule</button><br>
+	<button id="button3" onclick="sendSchedule()">send schedule</button>
+	<button id="button3" onclick="send1Schedule()">send 1 schedule</button><br>
 	<button id="button3" onclick="pubState()">publish state</button><br>
 	with timer1 starting in 
 	<input type="text" id="mbox1" value=0 size="2" onchange="mchanged()">
@@ -74,7 +75,7 @@
 				client.on('message', function(topic, payload) {
 					var pls = payload.toString()
 					var plo = JSON.parse(pls)
-					console.log(plo)
+					//console.log(plo)
 					console.log('['+topic+'] '+payload.toString())
 			    var sp = topic.split("/")
 			    var job = sp[1];	
@@ -87,6 +88,9 @@
 							document.getElementById('timr1').innerHTML=plo.timr1
 							document.getElementById('timr2').innerHTML=plo.timr2
 							document.getElementById('timr3').innerHTML=plo.timr3
+							break;
+						case "progs":
+							console.log(plo)
 							break;
 			    }			
 				});	
@@ -195,6 +199,48 @@
 			console.log(`${d31} - ${hr31}:${mi31}`)
 			console.log(`${d32} - ${hr32}:${mi32}`)
 			var thecmd =  "{\"crement\":"+crement+",\"serels\":[0,99,1,2,3],\"progs\":[[[0,0,80,77],[6,12,82,75],[8,20,85,78],["+hr1+","+mi1+",78,74],["+hr31+","+mi31+",83,79]],[[0,0,0],["+hr1+","+mi1+",1],["+hr31+","+mi31+",0]],[[0,0,0],["+hr2+","+mi2+",1],["+hr32+","+mi32+",0]],[[0,0,0],["+hr3+","+mi3+",1],["+hr33+","+mi33+",0]]]}";
+			console.log(thecmd);
+			client.publish(sched, thecmd)			
+		}
+		function send1Schedule(){
+			//console.log(v.value);
+			crement = document.getElementById("crement").value
+			var d = new Date();
+			var strtmin1 = m1.value;
+			var strtmin2 = m2.value;
+			var strtmin3 = m3.value;
+			var d01 = Date.now()+60000*strtmin1
+			var d02= Date.now()+60000*strtmin2
+			var d03= Date.now()+60000*strtmin3
+			var d21 = new Date(d01);
+			var d22 = new Date(d02);
+			var d23 = new Date(d03);
+
+			var setmin1 = v1.value
+			var setmin2 = v2.value
+			var setmin3 = v3.value
+			var d31 = new Date(d01+ 60000*(setmin1));
+			var d32 = new Date(d02+ 60000*(setmin2));
+			var d33 = new Date(d03+ 60000*(setmin3));
+			console.log(d);
+			var hr1 = d21.getHours();
+			var mi1 = d21.getMinutes();
+			var hr2 = d22.getHours();
+			var mi2 = d22.getMinutes();
+			var hr3 = d23.getHours();
+			var mi3 = d23.getMinutes();
+			var hr31 = d31.getHours();
+			var mi31 = d31.getMinutes();
+			var hr32 = d32.getHours();
+			var mi32 = d32.getMinutes();
+			var hr33 = d33.getHours();
+			var mi33 = d33.getMinutes();
+			console.log(`${d21} - ${hr1}:${mi1}`)
+			console.log(`${d22} - ${hr2}:${mi2}`)
+			console.log(`${d31} - ${hr31}:${mi31}`)
+			console.log(`${d32} - ${hr32}:${mi32}`)
+			var thecmd =  "{\"crement\":"+crement+",\"serels\":[0,99,1,2,99],\"progs\":[[[0,0,80,77],[6,12,82,75],[8,20,85,78],["+hr1+","+mi1+",78,74],["+hr31+","+mi31+",83,79]],[[0,0,0],["+hr1+","+mi1+",1],["+hr31+","+mi31+",0]],[[0,0,0],["+hr2+","+mi2+",1],["+hr32+","+mi32+",0]]]}";
+			//var thecmd =  "{\"crement\":"+crement+",\"serels\":[99,99,99,99,0],\"progs\":[[["+hr31+","+mi31+",83,79]],[[0,0,0],["+hr1+","+mi1+",1]]]}";
 			console.log(thecmd);
 			client.publish(sched, thecmd)			
 		}

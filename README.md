@@ -5,6 +5,22 @@
 inherits code from demiot and cascada-webpack
 
 ## tags
+### 07-react+progs
+
+updateTimers changes IS_ON
+
+        switch(job){
+          var newstate = Object.assign({}, this.state)
+          case "status":
+            switch(plo.id){
+              case 3:
+                console.log('state of relay3: ' + plo.darr[0]);
+                could be on, off or timed(on)
+                if on 
+                  if timr>0 then timer 
+                  else on
+                else off  
+
 ### 06-react_stop_the_waiting
 ### 05-bitwise_f.HAY_CNG
 * still to do fix hilimit, lolimit
