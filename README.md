@@ -5,7 +5,9 @@
 inherits code from demiot and cascada-webpack
 
 ## tags
+### 06-react_stop_the_waiting
 ### 05-bitwise_f.HAY_CNG
+* still to do fix hilimit, lolimit
 pulled flags into its own struct
 ### 04-changing_state_impl
 * <s>maybe have a function that takes ste and wraps a digital write but that is too hard so..</s> can't do, called from too many places
