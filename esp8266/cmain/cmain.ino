@@ -44,11 +44,14 @@ Sched sched;
 
 state_t ste;
 //ste = {{0,80,70},{0,90,80},{1},{1},{1},1,0,0,1,0};
+flags_t f;
 
 void initState(){
   //AUTOMA, NEEDS_RESET, sndSched, HAY_CNG
-  ste = {{44,0,80,50},{33,0,90,60},{0},{0},{0},1,0,0,-1};
+  ste = {{44,0,80,50},{33,0,90,60},{0},{0},{0},1,0,0};
   ste.temp1.hilimit=85;
+  f.HAY_CNG=0;
+  Serial.println(f.HAY_CNG);
   ste.temp1 = {1,94,77};
 }
 
@@ -94,14 +97,14 @@ void processInc(){
           NEW_ALARM=31;
           IS_ON=31;
           Alarm.clear();
-          sched.actProgs2(tmr, ste);
+          sched.actProgs2(tmr, ste, f);
           break;            
         case 2:
           Serial.println("in cmd");
           Cmd cmd;
           // cmd.deserialize(ipayload);
           // cmd.act(st);
-          cmd.deserialize2(ipayload,ste, po, tmr);
+          cmd.deserialize2(ipayload,ste, po, tmr, f);
           break; 
         default:           
           Serial.println("in default");
@@ -125,43 +128,98 @@ void processInc(){
 //   Serial.print(status);
 //   Serial.println(astr);
 // }
-void publishState(){
-  char astr[120];
-  switch(ste.HAY_CNG){
-    case 0:
-      sprintf(astr, "{\"id\":%d, \"darr\":[%d, %d, %d, %d]}", 0, ste.temp1.temp, ste.temp1.state, ste.temp1.hilimit, ste.temp1.lolimit);
-      break;
-    case 1:
-      sprintf(astr, "{\"id\":%d, \"darr\":[%d, %d, %d, %d]}", 1, ste.temp2.temp, ste.temp2.state, ste.temp2.hilimit, ste.temp2.lolimit);
-      break;
-    case 2:
-      sprintf(astr, "{\"id\":%d, \"data\":%d}", 2, ste.timr1.state);
-      break;
-    case 3:
-      sprintf(astr, "{\"id\":%d, \"data\":%d}", 3, ste.timr2.state);
-      break;
-    case 4:
-      sprintf(astr, "{\"id\":%d, \"data\":%d}", 4, ste.timr2.state);
-      break;
-    case 5:
-      sprintf(astr, "{\"id\":%d, \"data\":%d}", 5, ste.AUTOMA);
-      break;
-    case 6:
-      sprintf(astr, "{\"id\":%d, \"data\":%d}", 6, ste.AUTOMA);
-      break;
-    case 7:
-      sprintf(astr, "{\"id\":%d, \"data\":%d}", 7, ste.sndSched);
-      break;
-  }
-  char status[20];
-  strcpy(status,devid);
-  strcat(status,"/status");
+// void publishState(int HC){
+//   char astr[120];
+//   switch(HC){
+//     case 0:
+//       sprintf(astr, "{\"id\":%d, \"darr\":[%d, %d, %d, %d]}", 0, ste.temp1.temp, ste.temp1.state, ste.temp1.hilimit, ste.temp1.lolimit);
+//       break;
+//     case 1:
+//       sprintf(astr, "{\"id\":%d, \"darr\":[%d, %d, %d, %d]}", 1, ste.temp2.temp, ste.temp2.state, ste.temp2.hilimit, ste.temp2.lolimit);
+//       break;
+//     case 2:
+//       sprintf(astr, "{\"id\":%d, \"darr\":[%d]}", 2, ste.timr1.state);
+//       break;
+//     case 3:
+//       sprintf(astr, "{\"id\":%d, \"darr\":[%d]}", 3, ste.timr2.state);
+//       break;
+//     case 4:
+//       sprintf(astr, "{\"id\":%d, \"darr\":[%d]}", 4, ste.timr3.state);
+//       break;
+//     case 5:
+//       sprintf(astr, "{\"id\":%d, \"data\":%d}", 5, ste.AUTOMA);
+//       break;
+//     case 6:
+//       sprintf(astr, "{\"id\":%d, \"data\":%d}", 6, ste.NEEDS_RESET);
+//       break;
+//     case 7:
+//       sprintf(astr, "{\"id\":%d, \"data\":%d}", 7, ste.sndSched);
+//       for (int i=0;i<7;i++){
+//         publishState(i);
+//       }
+//       break;
+//   }
+//   char status[20];
+//   strcpy(status,devid);
+//   strcat(status,"/status");
+//   if (client.connected()){
+//     client.publish(status, astr, true);
+//   } 
+//   Serial.print(status);
+//   Serial.println(astr);
+// }
+void clpub(char status[20], char astr[120]){
   if (client.connected()){
     client.publish(status, astr, true);
-  } 
+  }   
   Serial.print(status);
   Serial.println(astr);
 }
+
+void publishState(int hc){
+  Serial.print("in publishState w: ");
+  Serial.println(hc);
+  char status[20];
+  strcpy(status,devid);
+  strcat(status,"/status");  
+  char astr[120];
+  //sprintf(astr, "{\"id\":%d, \"darr\":[%d]}", 3, ste.timr2.state);
+  if((hc & 1) == 1){
+    sprintf(astr, "{\"id\":%d, \"darr\":[%d, %d, %d, %d]}", 0, ste.temp1.temp, ste.temp1.state, ste.temp1.hilimit, ste.temp1.lolimit);
+    clpub(status, astr);
+  }
+  if((hc & 2) == 2){
+    sprintf(astr, "{\"id\":%d, \"darr\":[%d, %d, %d, %d]}", 1, ste.temp2.temp, ste.temp2.state, ste.temp2.hilimit, ste.temp2.lolimit);
+    clpub(status, astr);
+  }
+  if((hc & 4) == 4){
+    sprintf(astr, "{\"id\":%d, \"darr\":[%d]}", 2, ste.timr1.state);
+    clpub(status, astr);
+  }
+  if((hc & 8) == 8){
+    sprintf(astr, "{\"id\":%d, \"darr\":[%d]}", 3, ste.timr2.state);
+    clpub(status, astr);
+  }
+  if((hc & 16) == 16){
+    sprintf(astr,   "{\"id\":%d, \"darr\":[%d]}", 4, ste.timr3.state);
+    clpub(status, astr);
+  }
+  if((hc & 32) == 32){
+    sprintf(astr, "{\"id\":%d, \"data\":%d}", 5, ste.AUTOMA);
+    clpub(status, astr);
+  }
+  if((hc & 64) == 64){
+    sprintf(astr, "{\"id\":%d, \"data\":%d}", 6, ste.NEEDS_RESET);
+    clpub(status, astr);
+  }
+  if((hc &128) == 128){
+    sprintf(astr, "{\"id\":%d, \"data\":%d}", 7, ste.sndSched);
+    publishState(127);//11111111
+    clpub(status, astr);
+  }
+}
+
+
 
 void publishTmr(){
   char astr[120];
@@ -182,17 +240,17 @@ void readTemps(){
   int temp2 = (int)DS18B20.getTempFByIndex(1);
   if(temp1 != ste.temp1.temp){
     ste.temp1.temp=temp1;
-    ste.HAY_CNG=0;
+    f.HAY_CNG=f.HAY_CNG | 1;
   }
   if(temp2 != ste.temp2.temp){
     ste.temp2.temp=temp2;
-    ste.HAY_CNG=1;
+    f.HAY_CNG=f.HAY_CNG | 2;
   }
 }
 
 void controlHeat(){
   bool heat;
-  if (ste.HAY_CNG==0){
+  if (f.HAY_CNG | 1){
     if (ste.temp1.temp >= ste.temp1.hilimit){
       heat=0;
     } 
@@ -203,7 +261,7 @@ void controlHeat(){
       ste.temp1.state = heat;
       digitalWrite(po.temp1, heat);
     }
-  } else if (ste.HAY_CNG==1){
+  } else if (f.HAY_CNG | 2){
     if (ste.temp2.temp >= ste.temp2.hilimit){
       heat=0;
     } 
@@ -242,7 +300,10 @@ void setup(){
   pinMode(po.timr1, OUTPUT);
   pinMode(po.timr2, OUTPUT);
   pinMode(po.timr3, OUTPUT);
-  digitalWrite(po.temp1, st.heat);
+  digitalWrite(po.temp1, LOW);
+  digitalWrite(po.temp2, LOW);
+  digitalWrite(po.timr1, LOW);
+  digitalWrite(po.timr2, LOW);
   digitalWrite(po.timr3, LOW);
   req.stime();
   
@@ -261,7 +322,7 @@ time_t inow;
 
 void loop(){
   if(NEW_ALARM>0){
-    sched.actProgs2(tmr, ste);
+    sched.actProgs2(tmr, ste, f);
   }
   // if(NEW_ALARM>-1){
   //   int cur = 0;
@@ -282,7 +343,7 @@ void loop(){
   if(inow-schedcrement > tmr.crement*1000){
     schedcrement = inow;
     if(IS_ON > 3){
-      sched.updateTmrs(tmr, client, po, ste);
+      sched.updateTmrs(tmr, client, po, ste, f);
       publishTmr();
     }
   }
@@ -292,10 +353,10 @@ void loop(){
       readTemps();
       controlHeat();
     }
-    if(ste.HAY_CNG>-1){
+    if(f.HAY_CNG>0){
       //console.log("example console.log entry");
-      publishState();
-      ste.HAY_CNG=-1;
+      publishState(f.HAY_CNG);
+      f.HAY_CNG=0;
     }
   } 
 }

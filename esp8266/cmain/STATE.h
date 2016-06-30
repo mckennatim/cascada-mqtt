@@ -25,7 +25,6 @@ struct timr_t{
 	bool state;
 };
 
-
 struct state_t{
 	temp_t temp1;
 	temp_t temp2;
@@ -35,9 +34,10 @@ struct state_t{
 	bool AUTOMA;
   bool NEEDS_RESET;  
 	bool sndSched;
-  int HAY_CNG;
 };
 
-
+struct flags_t{
+	int HAY_CNG;
+};
 
 #endif

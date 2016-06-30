@@ -5,8 +5,33 @@
 inherits code from demiot and cascada-webpack
 
 ## tags
+### 05-bitwise_f.HAY_CNG
+pulled flags into its own struct
 ### 04-changing_state_impl
-not quite done. Works andreports on temp sensors but not change of timr state.
+* <s>maybe have a function that takes ste and wraps a digital write but that is too hard so..</s> can't do, called from too many places
+* must digitally encode all due for update inside HAY_CNG and then go through them all in every loop
+to set HAYCNG | setint
+00000001 temp1 change 1
+00000010 temp2 2
+00000100 timr1 4
+00001000 timr2 8
+00010000 timr3 16
+00101111
+00100000 Automa 32
+01000000 NEEDS_RESET 64
+10000000 sndSched 128
+01111111
+
+TRYNOW = HAYCNG
+reportOut TRYNOW
+while TRYNOW != HAYCNG{
+  reportOut TRYNOW
+}
+HAYCNG = 000000
+
+
+
+* not quite done. Works andreports on temp sensors but not change of timr state.
 ### 03-generalizing_state
 might still be a little cludgy. Sched::updateTimers checks for time left on timers and keeps them on if not zero so CMD::deserialize2 has to explicitly set them to zero.
 

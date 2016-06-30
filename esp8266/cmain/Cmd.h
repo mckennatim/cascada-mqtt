@@ -8,7 +8,7 @@
 class Cmd{
 public:
 	bool deserialize(char* kstr); 
-	bool deserialize2(char* kstr, state_t& ste, PORTS& po, TMR& tmr); 
+	bool deserialize2(char* kstr, state_t& ste, PORTS& po, TMR& tmr, flags_t& f); 
 	void act(STATE& st);
 private:
   bool heat;

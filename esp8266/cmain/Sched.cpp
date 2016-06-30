@@ -141,7 +141,7 @@ void Sched::resetAlarm(int i, int &cur, int &nxt){
 }
 
 
-void Sched::actProgs2(TMR& tmr, state_t& ste){
+void Sched::actProgs2(TMR& tmr, state_t& ste, flags_t& f){
 	tmr.crement=crement;
 	Serial.print("in actProgs2, NEW_ALARM=");
 	Serial.println(NEW_ALARM);
@@ -171,7 +171,7 @@ void Sched::actProgs2(TMR& tmr, state_t& ste){
 		Serial.println(progs[ii][cur][3]);	
 		ste.temp1.hilimit = progs[ii][cur][2];
 		ste.temp1.lolimit = progs[ii][cur][3];
-		ste.HAY_CNG=0;
+		f.HAY_CNG = f.HAY_CNG |1;
 		Alarm.alarmOnce(progs[ii][nxt][0],progs[ii][nxt][1], second(), bm1);
 	}
 	if((NEW_ALARM & 2) == 2){
@@ -209,18 +209,22 @@ void Sched::actProgs2(TMR& tmr, state_t& ste){
 			hr = fhr - shr;
 			int dur = 60*hr + mi;
 			tmr.timr1= dur*60;
+			//ste.timr1.state=1;
 			Serial.println(dur);
 		}else {
 			tmr.timr1=0;
+			ste.timr1.state=0;
 			Serial.println("countdown tmr1 is OFF");
 		}
+    f.HAY_CNG = f.HAY_CNG | 4;
 		Serial.print("next countdown timr1 is set for: ");
 		Serial.print(progs[ii][nxt][0]);
 		Serial.print(":");
 		Serial.print(progs[ii][nxt][1]);	
 		Serial.print("->");
-		Serial.println(progs[ii][nxt][2]);				
-		Alarm.alarmOnce(progs[ii][nxt][0],progs[ii][nxt][1], 1, bm4);			
+		Serial.println(progs[ii][nxt][2]);
+		int asec = second();				
+		Alarm.alarmOnce(progs[ii][nxt][0],progs[ii][nxt][1], asec, bm4);			
 	}
 	if((NEW_ALARM & 8) == 8 && senrels[3]<99){
 		NEW_ALARM = NEW_ALARM & 55;
@@ -259,18 +263,22 @@ void Sched::actProgs2(TMR& tmr, state_t& ste){
 			hr = fhr - shr;
 			int dur = 60*hr + mi;
 			tmr.timr2= dur*60;
+			//ste.timr2.state=1;
 			Serial.println(dur);
 		}else {
 			tmr.timr2=0;
+			ste.timr2.state=0;
 			Serial.println("countdown tmr2 is OFF");
 		}
+    f.HAY_CNG = f.HAY_CNG | 8;
 		Serial.print("next countdown timr2 is set for: ");
 		Serial.print(progs[ii][nxt][0]);
 		Serial.print(":");
 		Serial.print(progs[ii][nxt][1]);	
 		Serial.print("->");
 		Serial.println(progs[ii][nxt][2]);				
-		Alarm.alarmOnce(progs[ii][nxt][0],progs[ii][nxt][1], 2, bm8);			
+		int asec = second()+1;				
+		Alarm.alarmOnce(progs[ii][nxt][0],progs[ii][nxt][1], asec, bm8);			
 	}
 	if((NEW_ALARM & 16) == 16){
 		Serial.print("timr3 16 w mask47 :");
@@ -297,18 +305,22 @@ void Sched::actProgs2(TMR& tmr, state_t& ste){
 			hr = fhr - shr;
 			int dur = 60*hr + mi;
 			tmr.timr3= dur*60;
+			//ste.timr3.state=1;
 			Serial.println(dur);
 		}else {
 			tmr.timr3=0;
+			ste.timr3.state=0;
 			Serial.println("countdown tmr3 is OFF");
 		}
+    f.HAY_CNG = f.HAY_CNG | 16;
 		Serial.print("next countdown timr3 is set for: ");
 		Serial.print(progs[ii][nxt][0]);
 		Serial.print(":");
 		Serial.print(progs[ii][nxt][1]);	
 		Serial.print("->");
 		Serial.println(progs[ii][nxt][2]);				
-		Alarm.alarmOnce(progs[ii][nxt][0],progs[ii][nxt][1], 3, bm16);		
+		int asec = second()+2;				
+		Alarm.alarmOnce(progs[ii][nxt][0],progs[ii][nxt][1], asec, bm16);		
 	}
 	if((NEW_ALARM & 32) == 32){
 		Serial.print("reset for 1 min and shutting off 32 w mask31 :");
@@ -321,56 +333,66 @@ void Sched::actProgs2(TMR& tmr, state_t& ste){
 	}
 }
 
-void Sched::updateTmrs(TMR& tmr, PubSubClient& client, PORTS& po, state_t& ste){
+void Sched::updateTmrs(TMR& tmr, PubSubClient& client, PORTS& po, state_t& ste, flags_t& f){
 	if((IS_ON & 4) == 4){
-		int hl = HIGH;
+		int hl;
 		tmr.timr1 = tmr.timr1 - tmr.crement;
 		if(tmr.timr1 <= 0){
 			hl = LOW;
 			tmr.timr1 = 0;
+			ste.timr1.state=0;
 			IS_ON = IS_ON & 59;
+		}else{
+			hl=HIGH;
+			ste.timr1.state=1;
 		}
 		if (digitalRead(po.timr1) != hl){
 			digitalWrite(po.timr1, hl);
-			ste.HAY_CNG=2;
+    	f.HAY_CNG = f.HAY_CNG | 4;
 		}		// Serial.print("updating timer 1 to: ");
 		// Serial.println(tmr.timr1);
-		// // Serial.print("timr1: ");
+		// Serial.print("timr1: ");
 		// Serial.print(hl);
 		// Serial.println(digitalRead(po.timr1));		
 	}	
 	if((IS_ON & 8) == 8){
-		int hl = HIGH;
+		int hl;
 		tmr.timr2 = tmr.timr2 - tmr.crement;
 		if(tmr.timr2 <= 0){
 			hl = LOW;
 			tmr.timr2 = 0;
+			ste.timr2.state=0;
 			IS_ON = IS_ON & 55;
+		}else{
+			hl=HIGH;
+			ste.timr2.state=1;
 		}
 		if (digitalRead(po.timr2) != hl){
 			digitalWrite(po.timr2, hl);
-			ste.HAY_CNG=3;
+    	f.HAY_CNG = f.HAY_CNG | 8;
 		}
 		// Serial.print("timr2: ");
 		// Serial.print(hl);
 		// Serial.println(digitalRead(po.timr2));
 	}	
 	if((IS_ON & 16) == 16){
-		int hl = HIGH;
+		int hl;
 		tmr.timr3 = tmr.timr3 - tmr.crement;
 		// Serial.print("updating timer 3 to: ");
 		// Serial.println(tmr.timr3);		
-
 		if(tmr.timr3 <= 0){
 			hl = LOW;
 			tmr.timr3 = 0;
+			ste.timr3.state=0;
 			IS_ON = IS_ON & 47;
+		}else{
+			hl=HIGH;
+			ste.timr3.state=1;
 		}
 		if (digitalRead(po.timr3) != hl){
 			digitalWrite(po.timr3, hl);
-			ste.HAY_CNG=4;
+    	f.HAY_CNG = f.HAY_CNG | 16;
 		}		
-
 		// Serial.print("timr3: ");
 		// Serial.print(hl);
 		// Serial.println(digitalRead(po.timr3));		
