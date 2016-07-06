@@ -35,7 +35,7 @@ public:
 	// hr, min + 2 settings they can affect
 	int nsr; //number of programs
 	int seresz; //sizeof senrels
-	int progs[8][6][4]; //max 8 programs, w 6 events and 4 things set
+	int progs[8][8][6]; //max 8 programs, w 6 events and 4 things set
 	int senrels[8];//[0,99,1]
 	int events[6];
 	int haynRset[8];
